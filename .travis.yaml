@@ -1,0 +1,22 @@
+sudo: required
+services:
+  - docker
+
+before_install:
+  - docker build -t bragur/react-test -f ./client/Dockerfile.dev ./client
+
+script:
+  - docker run -e CI=true bragur/react-test npm test -- --coverage
+
+after_success:
+  - docker build -t bragur/multi-client ./client
+  - docker build -t bragur/multi-nginx ./nginx
+  - docker build -t bragur/multi-server ./server
+  - docker build -t bragur/multi-worker ./worker
+  # Log in
+  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_ID" --password-stdin
+  # Push images to Docker hub
+  - docker push bragur/multi-client
+  - docker push bragur/multi-nginx
+  - docker push bragur/multi-server
+  - docker push bragur/multi-worker
